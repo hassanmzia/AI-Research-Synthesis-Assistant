@@ -22,7 +22,7 @@ Based on the JHU Agentic AI RAG notebook by Zia Hassan, this application transfo
  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐
  │   React     │   │  Node.js    │   │   Django    │
  │  Frontend   │   │  Gateway    │   │  Backend    │
- │ (TypeScript)│   │ (port 3067) │   │ (port 3068) │
+ │ (TypeScript)│   │ (port 3067) │   │ (port 3069) │
  └─────────────┘   └──────┬──────┘   └──┬───┬───┬──┘
                           │              │   │   │
               ┌───────────┘    ┌─────────┘   │   └─────────┐
@@ -99,7 +99,7 @@ Based on the JHU Agentic AI RAG notebook by Zia Hassan, this application transfo
 |-----------|-----------|------|
 | Frontend | React 18, TypeScript, Tailwind CSS | (via Nginx) |
 | API Gateway | Node.js, Express, WebSocket | 3067 |
-| Backend | Django 5.1, DRF, Celery | 3068 |
+| Backend | Django 5.1, DRF, Celery | 3069 |
 | Database | PostgreSQL 16 | 5433 |
 | Cache/Broker | Redis 7 | 6380 |
 | Vector Store | ChromaDB | 8100 |

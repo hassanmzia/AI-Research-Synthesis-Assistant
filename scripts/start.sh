@@ -24,7 +24,9 @@ until docker compose exec -T postgres pg_isready -U arsa_user -d research_assist
 done
 echo "PostgreSQL is ready."
 
-# Run Django migrations
+# Generate and run Django migrations
+echo "Generating migrations..."
+docker compose exec -T backend python manage.py makemigrations --noinput
 echo "Running database migrations..."
 docker compose exec -T backend python manage.py migrate --noinput
 

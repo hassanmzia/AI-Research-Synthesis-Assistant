@@ -69,7 +69,7 @@ services:
       - arsa-network
 
   # ──────────────────────────────────────────────
-  # Django Backend – port 3068 (non-default)
+  # Django Backend – port 3069 (non-default)
   # ──────────────────────────────────────────────
   backend:
     build:
@@ -91,7 +91,7 @@ services:
       - CELERY_BROKER_URL=redis://redis:6379/1
       - CELERY_RESULT_BACKEND=redis://redis:6379/2
     ports:
-      - "3068:8000"
+      - "3069:8000"
     volumes:
       - ./backend:/app
       - media_data:/app/media

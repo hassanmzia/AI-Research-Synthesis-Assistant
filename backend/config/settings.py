@@ -69,7 +69,7 @@ WSGI_APPLICATION = "config.wsgi.application"
 # ── Database ────────────────────────────────────
 DATABASES = {
     "default": dj_database_url.config(
-        default="postgresql://arsa_user:arsa_secret_2024@localhost:5433/research_assistant",
+        default="postgresql://arsa_user:arsa_secret_2024@localhost:5434/research_assistant",
         conn_max_age=600,
     )
 }

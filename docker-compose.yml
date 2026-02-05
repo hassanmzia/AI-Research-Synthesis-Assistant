@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   # ──────────────────────────────────────────────
-  # PostgreSQL – port 5433 (non-default)
+  # PostgreSQL – port 5434 (non-default)
   # ──────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
@@ -13,7 +13,7 @@ services:
       POSTGRES_USER: arsa_user
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-arsa_secret_2024}
     ports:
-      - "5433:5432"
+      - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init.sql

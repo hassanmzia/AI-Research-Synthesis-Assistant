@@ -9,10 +9,10 @@ Based on the JHU Agentic AI RAG notebook by Zia Hassan, this application transfo
 ## Architecture
 
 ```
-                    http://172.168.1.95:3066
+                    http://172.168.1.95:13066
                            |
                     ┌──────┴──────┐
-                    │   Nginx     │  (port 3066)
+                    │   Nginx     │  (port 13066)
                     │  Reverse    │
                     │   Proxy     │
                     └──┬───┬───┬──┘
@@ -103,7 +103,7 @@ Based on the JHU Agentic AI RAG notebook by Zia Hassan, this application transfo
 | Database | PostgreSQL 16 | 5433 |
 | Cache/Broker | Redis 7 | 6380 |
 | Vector Store | ChromaDB | 8100 |
-| Reverse Proxy | Nginx | **3066** |
+| Reverse Proxy | Nginx | **13066** |
 | Task Monitor | Celery Flower | 5556 |
 
 ## Quick Start
@@ -124,8 +124,8 @@ cp .env.example .env
 ```
 
 ### 3. Access the Application
-- **Main Site**: http://172.168.1.95:3066
-- **Admin Panel**: http://172.168.1.95:3066/admin/
+- **Main Site**: http://172.168.1.95:13066
+- **Admin Panel**: http://172.168.1.95:13066/admin/
 - **API Gateway**: http://172.168.1.95:3071/health
 - **Celery Monitor**: http://172.168.1.95:5556
 

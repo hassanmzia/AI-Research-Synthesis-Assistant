@@ -2,9 +2,9 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 
-ARG REACT_APP_API_URL=http://localhost:3066/api
-ARG REACT_APP_WS_URL=ws://localhost:3066/ws
-ARG REACT_APP_GATEWAY_URL=http://localhost:3066/gw
+ARG REACT_APP_API_URL=http://localhost:13066/api
+ARG REACT_APP_WS_URL=ws://localhost:13066/ws
+ARG REACT_APP_GATEWAY_URL=http://localhost:13066/gw
 
 ENV REACT_APP_API_URL=$REACT_APP_API_URL
 ENV REACT_APP_WS_URL=$REACT_APP_WS_URL

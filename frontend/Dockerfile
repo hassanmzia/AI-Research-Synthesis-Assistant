@@ -11,7 +11,7 @@ ENV REACT_APP_WS_URL=$REACT_APP_WS_URL
 ENV REACT_APP_GATEWAY_URL=$REACT_APP_GATEWAY_URL
 
 COPY package*.json ./
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 COPY . .
 RUN npm run build

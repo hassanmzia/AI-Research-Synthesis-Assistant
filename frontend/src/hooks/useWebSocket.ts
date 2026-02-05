@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 
-const WS_URL = process.env.REACT_APP_WS_URL || 'ws://172.168.1.95:3066/ws';
+const WS_URL = process.env.REACT_APP_WS_URL || 'ws://172.168.1.95:13066/ws';
 
 interface WSMessage {
   type: string;

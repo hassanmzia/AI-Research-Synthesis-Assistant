@@ -22,7 +22,7 @@ Based on the JHU Agentic AI RAG notebook by Zia Hassan, this application transfo
  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐
  │   React     │   │  Node.js    │   │   Django    │
  │  Frontend   │   │  Gateway    │   │  Backend    │
- │ (TypeScript)│   │ (port 3067) │   │ (port 3070) │
+ │ (TypeScript)│   │ (port 3071) │   │ (port 3070) │
  └─────────────┘   └──────┬──────┘   └──┬───┬───┬──┘
                           │              │   │   │
               ┌───────────┘    ┌─────────┘   │   └─────────┐
@@ -98,7 +98,7 @@ Based on the JHU Agentic AI RAG notebook by Zia Hassan, this application transfo
 | Component | Technology | Port |
 |-----------|-----------|------|
 | Frontend | React 18, TypeScript, Tailwind CSS | (via Nginx) |
-| API Gateway | Node.js, Express, WebSocket | 3067 |
+| API Gateway | Node.js, Express, WebSocket | 3071 |
 | Backend | Django 5.1, DRF, Celery | 3070 |
 | Database | PostgreSQL 16 | 5433 |
 | Cache/Broker | Redis 7 | 6380 |
@@ -126,7 +126,7 @@ cp .env.example .env
 ### 3. Access the Application
 - **Main Site**: http://172.168.1.95:3066
 - **Admin Panel**: http://172.168.1.95:3066/admin/
-- **API Gateway**: http://172.168.1.95:3067/health
+- **API Gateway**: http://172.168.1.95:3071/health
 - **Celery Monitor**: http://172.168.1.95:5556
 
 ### Default Credentials

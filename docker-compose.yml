@@ -195,7 +195,7 @@ services:
       - arsa-network
 
   # ──────────────────────────────────────────────
-  # Node.js API Gateway – port 3067 (non-default)
+  # Node.js API Gateway – port 3071 (non-default)
   # ──────────────────────────────────────────────
   gateway:
     build:
@@ -211,7 +211,7 @@ services:
       - JWT_SECRET=${JWT_SECRET:-arsa-jwt-secret-change-in-production}
       - CORS_ORIGIN=http://172.168.1.95:3066,http://localhost:3066
     ports:
-      - "3067:4000"
+      - "3071:4000"
     depends_on:
       - backend
       - redis

@@ -26,7 +26,7 @@ services:
       - arsa-network
 
   # ──────────────────────────────────────────────
-  # Redis – port 6380 (non-default)
+  # Redis – port 6381 (non-default)
   # ──────────────────────────────────────────────
   redis:
     image: redis:7-alpine
@@ -34,7 +34,7 @@ services:
     restart: unless-stopped
     command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
     ports:
-      - "6380:6379"
+      - "6381:6379"
     volumes:
       - redis_data:/data
     healthcheck:

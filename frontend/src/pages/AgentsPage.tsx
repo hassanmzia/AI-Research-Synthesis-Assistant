@@ -170,18 +170,47 @@ export default function AgentsPage() {
     if (!obj || Object.keys(obj).length === 0) return <span className="text-gray-400 italic">No data</span>;
 
     const elements: JSX.Element[] = [];
+    const handledKeys = new Set<string>();
+
+    // Handle model info
+    if (obj.model) {
+      handledKeys.add('model');
+      elements.push(
+        <div key="model" className="mb-3 flex items-center gap-2">
+          <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Model:</span>
+          <span className="text-xs px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full">{obj.model}</span>
+        </div>
+      );
+    }
 
     // Handle question/answer content
     if (obj.question || obj.query) {
+      handledKeys.add('question');
+      handledKeys.add('query');
+      handledKeys.add('answer');
       elements.push(
         <div key="qa" className="mb-4">
           {renderQA(obj.question || obj.query, obj.answer)}
+        </div>
+      );
+    } else if (obj.answer) {
+      // Handle standalone answer (without question in same payload)
+      handledKeys.add('answer');
+      elements.push(
+        <div key="answer" className="mb-4">
+          <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border-l-4 border-green-500">
+            <div className="text-xs font-semibold text-green-600 dark:text-green-400 mb-1 uppercase">Answer</div>
+            <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap leading-relaxed">{obj.answer}</p>
+          </div>
         </div>
       );
     }
 
     // Handle context/sources
     if (obj.context || obj.contexts || obj.retrieved_context) {
+      handledKeys.add('context');
+      handledKeys.add('contexts');
+      handledKeys.add('retrieved_context');
       elements.push(
         <div key="context" className="mb-4">
           {renderContext(obj.context || obj.contexts || obj.retrieved_context)}
@@ -189,8 +218,75 @@ export default function AgentsPage() {
       );
     }
 
-    // Handle evaluations
-    if (obj.evaluations) {
+    // Handle sources (paper references)
+    if (obj.sources && Array.isArray(obj.sources) && obj.sources.length > 0) {
+      handledKeys.add('sources');
+      elements.push(
+        <div key="sources" className="mb-4">
+          <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase">
+            Sources ({obj.sources.length})
+          </div>
+          <div className="space-y-2">
+            {obj.sources.slice(0, 5).map((source: any, idx: number) => (
+              <div key={idx} className="text-sm p-2 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
+                <div className="font-medium text-gray-800 dark:text-gray-200">
+                  {source.paper_title || source.title || `Source ${idx + 1}`}
+                </div>
+                <div className="flex gap-3 mt-1 text-xs text-gray-500">
+                  {source.page_number !== undefined && <span>Page {source.page_number + 1}</span>}
+                  {source.chunk_index !== undefined && <span>Chunk {source.chunk_index}</span>}
+                  {source.relevance_score !== undefined && (
+                    <span className="text-green-600 dark:text-green-400">
+                      Relevance: {(source.relevance_score * 100).toFixed(0)}%
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+            {obj.sources.length > 5 && (
+              <div className="text-xs text-gray-500">...and {obj.sources.length - 5} more</div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // Handle nested evaluation object (common pattern)
+    if (obj.evaluation && typeof obj.evaluation === 'object') {
+      handledKeys.add('evaluation');
+      const evalData = obj.evaluation;
+
+      if (evalData.evaluations) {
+        elements.push(
+          <div key="evaluations" className="mb-4">
+            <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase">Evaluation Results</div>
+            {renderEvaluations(evalData.evaluations)}
+          </div>
+        );
+      }
+
+      if (evalData.composite_score !== undefined) {
+        elements.push(
+          <div key="composite" className="mb-4 flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Overall Score:</span>
+            <ScoreBadge score={evalData.composite_score / 5} />
+            <span className="text-xs text-gray-500">({evalData.composite_score}/5)</span>
+          </div>
+        );
+      }
+
+      if (evalData.total_tokens) {
+        elements.push(
+          <div key="eval-tokens" className="mb-2 text-sm text-gray-500">
+            <span className="font-medium">Evaluation tokens:</span> {evalData.total_tokens.toLocaleString()}
+          </div>
+        );
+      }
+    }
+
+    // Handle top-level evaluations
+    if (obj.evaluations && !obj.evaluation) {
+      handledKeys.add('evaluations');
       elements.push(
         <div key="evaluations" className="mb-4">
           <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase">Evaluation Results</div>
@@ -199,18 +295,49 @@ export default function AgentsPage() {
       );
     }
 
-    // Handle composite score
-    if (obj.composite_score !== undefined) {
+    // Handle composite score (top-level)
+    if (obj.composite_score !== undefined && !obj.evaluation) {
+      handledKeys.add('composite_score');
       elements.push(
         <div key="composite" className="mb-4 flex items-center gap-2">
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Overall Score:</span>
-          <ScoreBadge score={obj.composite_score} />
+          <ScoreBadge score={obj.composite_score / 5} />
+          <span className="text-xs text-gray-500">({obj.composite_score}/5)</span>
         </div>
       );
     }
 
-    // Handle tokens used
-    if (obj.total_tokens || obj.tokens_used) {
+    // Handle tokens object (with total, prompt, completion) or simple tokens
+    if (obj.tokens && typeof obj.tokens === 'object') {
+      handledKeys.add('tokens');
+      elements.push(
+        <div key="tokens" className="mb-4">
+          <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase">Token Usage</div>
+          <div className="flex gap-4 text-sm">
+            {obj.tokens.total !== undefined && (
+              <div className="bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded">
+                <span className="text-gray-500 dark:text-gray-400">Total: </span>
+                <span className="font-medium text-gray-800 dark:text-gray-200">{obj.tokens.total.toLocaleString()}</span>
+              </div>
+            )}
+            {obj.tokens.prompt !== undefined && (
+              <div className="bg-blue-50 dark:bg-blue-900/20 px-3 py-1 rounded">
+                <span className="text-blue-600 dark:text-blue-400">Prompt: </span>
+                <span className="font-medium">{obj.tokens.prompt.toLocaleString()}</span>
+              </div>
+            )}
+            {obj.tokens.completion !== undefined && (
+              <div className="bg-green-50 dark:bg-green-900/20 px-3 py-1 rounded">
+                <span className="text-green-600 dark:text-green-400">Completion: </span>
+                <span className="font-medium">{obj.tokens.completion.toLocaleString()}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    } else if (obj.total_tokens || obj.tokens_used) {
+      handledKeys.add('total_tokens');
+      handledKeys.add('tokens_used');
       elements.push(
         <div key="tokens" className="mb-4 text-sm text-gray-500">
           <span className="font-medium">Tokens used:</span> {(obj.total_tokens || obj.tokens_used).toLocaleString()}
@@ -218,8 +345,19 @@ export default function AgentsPage() {
       );
     }
 
+    // Handle latency
+    if (obj.latency_ms !== undefined) {
+      handledKeys.add('latency_ms');
+      elements.push(
+        <div key="latency" className="mb-3 text-sm text-gray-500">
+          <span className="font-medium">Latency:</span> {obj.latency_ms.toLocaleString()}ms
+        </div>
+      );
+    }
+
     // Handle papers/documents
     if (obj.papers && Array.isArray(obj.papers)) {
+      handledKeys.add('papers');
       elements.push(
         <div key="papers" className="mb-4">
           <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase">
@@ -243,6 +381,9 @@ export default function AgentsPage() {
     // Handle synthesis/report content
     if (obj.synthesis || obj.report || obj.content) {
       const content = obj.synthesis || obj.report || obj.content;
+      handledKeys.add('synthesis');
+      handledKeys.add('report');
+      handledKeys.add('content');
       elements.push(
         <div key="content" className="mb-4">
           <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase">
@@ -257,6 +398,7 @@ export default function AgentsPage() {
 
     // Handle citations
     if (obj.citations && Array.isArray(obj.citations)) {
+      handledKeys.add('citations');
       elements.push(
         <div key="citations" className="mb-4">
           <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase">
@@ -273,8 +415,45 @@ export default function AgentsPage() {
       );
     }
 
+    // Handle status field
+    if (obj.status) {
+      handledKeys.add('status');
+      const statusColor = obj.status === 'completed' || obj.status === 'success' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                          obj.status === 'failed' || obj.status === 'error' ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300' :
+                          'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
+      elements.push(
+        <div key="status" className="mb-3 flex items-center gap-2">
+          <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Status:</span>
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor}`}>{obj.status}</span>
+        </div>
+      );
+    }
+
+    // Handle chunks_embedded (from embedding agent)
+    if (obj.chunks_embedded !== undefined) {
+      handledKeys.add('chunks_embedded');
+      elements.push(
+        <div key="chunks" className="mb-3 text-sm">
+          <span className="font-medium text-gray-700 dark:text-gray-300">Chunks embedded:</span>
+          <span className="ml-2 text-green-600 dark:text-green-400 font-medium">{obj.chunks_embedded}</span>
+        </div>
+      );
+    }
+
+    // Handle collection name
+    if (obj.collection) {
+      handledKeys.add('collection');
+      elements.push(
+        <div key="collection" className="mb-3 text-sm text-gray-500">
+          <span className="font-medium">Collection:</span>
+          <code className="ml-2 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded text-xs">{obj.collection}</code>
+        </div>
+      );
+    }
+
     // Handle error
     if (obj.error) {
+      handledKeys.add('error');
       elements.push(
         <div key="error" className="mb-4 bg-red-50 dark:bg-red-900/20 p-3 rounded border-l-4 border-red-500">
           <div className="text-xs font-semibold text-red-600 dark:text-red-400 mb-1 uppercase">Error</div>
@@ -283,18 +462,65 @@ export default function AgentsPage() {
       );
     }
 
+    // Handle action field
+    if (obj.action) {
+      handledKeys.add('action');
+      elements.push(
+        <div key="action" className="mb-3 flex items-center gap-2">
+          <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Action:</span>
+          <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">{obj.action.replace(/_/g, ' ')}</span>
+        </div>
+      );
+    }
+
+    // Handle agents array (from discover_agents)
+    if (obj.agents && Array.isArray(obj.agents)) {
+      handledKeys.add('agents');
+      elements.push(
+        <div key="agents" className="mb-4">
+          <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase">
+            Discovered Agents ({obj.agents.length})
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+            {obj.agents.map((agent: any, idx: number) => (
+              <div key={idx} className="text-sm p-3 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-semibold text-gray-800 dark:text-gray-200 capitalize">{agent.name}</span>
+                  <span className="text-xs px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded">v{agent.version}</span>
+                  <span className="text-xs px-1.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded">{agent.protocol}</span>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{agent.description}</p>
+                <div className="flex flex-wrap gap-1">
+                  {agent.capabilities?.slice(0, 4).map((cap: string, capIdx: number) => (
+                    <span key={capIdx} className="text-xs px-1.5 py-0.5 bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded">
+                      {cap.replace(/_/g, ' ')}
+                    </span>
+                  ))}
+                  {agent.capabilities?.length > 4 && (
+                    <span className="text-xs text-gray-400">+{agent.capabilities.length - 4} more</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // Common IDs to skip in "other fields"
+    handledKeys.add('query_id');
+    handledKeys.add('paper_id');
+    handledKeys.add('project_id');
+
     // If we rendered specific content, return it
     if (elements.length > 0) {
       // Show any remaining fields not yet rendered
-      const renderedKeys = new Set(['question', 'query', 'answer', 'context', 'contexts', 'retrieved_context',
-        'evaluations', 'composite_score', 'total_tokens', 'tokens_used', 'papers', 'synthesis', 'report',
-        'content', 'citations', 'error', 'query_id']);
-      const otherFields = Object.entries(obj).filter(([key]) => !renderedKeys.has(key));
+      const otherFields = Object.entries(obj).filter(([key]) => !handledKeys.has(key));
 
       if (otherFields.length > 0) {
         elements.push(
           <details key="other" className="mt-2">
-            <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-700">
+            <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-700 dark:hover:text-gray-300">
               Other fields ({otherFields.length})
             </summary>
             <pre className="text-xs bg-gray-100 dark:bg-gray-900 p-2 mt-1 rounded overflow-x-auto">

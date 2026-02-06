@@ -245,28 +245,78 @@ class SynthesisReportCreateSerializer(serializers.Serializer):
 # ── Agent Logs ──────────────────────────────────
 class AgentLogSerializer(serializers.ModelSerializer):
     child_logs = serializers.SerializerMethodField()
+    outgoing_interactions = serializers.SerializerMethodField()
+    parent_log_id = serializers.UUIDField(source="parent_log.id", read_only=True, allow_null=True)
+    parent_agent_name = serializers.CharField(source="parent_log.agent_name", read_only=True, allow_null=True)
 
     class Meta:
         model = AgentLog
         fields = [
             "id", "agent_name", "task_id", "status",
             "input_data", "output_data", "error_message",
-            "duration_ms", "tokens_used", "child_logs",
+            "duration_ms", "tokens_used",
+            "parent_log_id", "parent_agent_name",
+            "child_logs", "outgoing_interactions",
             "created_at", "updated_at",
         ]
 
     def get_child_logs(self, obj):
         children = obj.child_logs.all()[:10]
-        return AgentLogSerializer(children, many=True).data
+        # Use a simplified serializer to avoid deep recursion
+        return [
+            {
+                "id": str(c.id),
+                "agent_name": c.agent_name,
+                "status": c.status,
+                "duration_ms": c.duration_ms,
+                "tokens_used": c.tokens_used,
+            }
+            for c in children
+        ]
+
+    def get_outgoing_interactions(self, obj):
+        interactions = obj.outgoing_interactions.all()[:10]
+        return [
+            {
+                "id": str(i.id),
+                "target_agent": i.target_agent,
+                "status": i.status,
+                "duration_ms": i.duration_ms,
+                "request_summary": _summarize_payload(i.request_payload),
+                "response_summary": _summarize_payload(i.response_payload),
+            }
+            for i in interactions
+        ]
+
+
+def _summarize_payload(payload: dict, max_length: int = 200) -> str:
+    """Create a brief summary of a payload for display."""
+    if not payload:
+        return ""
+    if "error" in payload:
+        return f"Error: {payload['error'][:100]}"
+    keys = list(payload.keys())[:5]
+    summary = ", ".join(keys)
+    if len(keys) < len(payload):
+        summary += f" (+{len(payload) - len(keys)} more)"
+    return summary
 
 
 class AgentInteractionSerializer(serializers.ModelSerializer):
+    parent_log_id = serializers.UUIDField(source="parent_log.id", read_only=True, allow_null=True)
+    child_log_id = serializers.UUIDField(source="child_log.id", read_only=True, allow_null=True)
+    parent_agent_name = serializers.CharField(source="parent_log.agent_name", read_only=True, allow_null=True)
+    child_agent_status = serializers.CharField(source="child_log.status", read_only=True, allow_null=True)
+
     class Meta:
         model = AgentInteraction
         fields = [
             "id", "source_agent", "target_agent", "protocol",
             "request_payload", "response_payload", "status",
-            "duration_ms", "created_at",
+            "duration_ms",
+            "parent_log_id", "child_log_id",
+            "parent_agent_name", "child_agent_status",
+            "created_at",
         ]
 
 

@@ -84,6 +84,23 @@ class AgentInteraction(models.Model):
         default="pending",
     )
     duration_ms = models.IntegerField(null=True, blank=True)
+    # Link to parent and child logs for full traceability
+    parent_log = models.ForeignKey(
+        AgentLog,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="outgoing_interactions",
+        help_text="Log of the source agent that initiated this interaction",
+    )
+    child_log = models.ForeignKey(
+        AgentLog,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="incoming_interactions",
+        help_text="Log of the target agent that handled this interaction",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

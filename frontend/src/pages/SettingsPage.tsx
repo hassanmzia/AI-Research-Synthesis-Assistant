@@ -42,6 +42,20 @@ export default function SettingsPage() {
     }
   };
 
+  const handleDownload = async (exp: any) => {
+    const extMap: Record<string, string> = {
+      pdf: 'pdf', json: 'json', markdown: 'md', csv: 'csv', bibtex: 'bib'
+    };
+    const ext = extMap[exp.output_format] || 'txt';
+    const filename = `${exp.export_type}_${exp.id.slice(0, 8)}.${ext}`;
+    try {
+      await exportAPI.download(exp.id, filename);
+      toast.success('Download started!');
+    } catch {
+      toast.error('Download failed');
+    }
+  };
+
   const tabs = [
     { id: 'profile', label: 'Profile' },
     { id: 'api-keys', label: 'API Keys' },
@@ -190,6 +204,14 @@ export default function SettingsPage() {
                     <span className="text-xs text-gray-500">
                       {new Date(exp.created_at).toLocaleString()}
                     </span>
+                    {exp.status === 'completed' && (
+                      <button
+                        onClick={() => handleDownload(exp)}
+                        className="btn-primary text-xs px-2 py-1"
+                      >
+                        Download
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

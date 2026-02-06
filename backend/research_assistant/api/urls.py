@@ -59,6 +59,7 @@ urlpatterns = [
     # ── Exports ─────────────────────────────────
     path("exports/", views.ExportListCreateView.as_view(), name="export-list"),
     path("exports/<uuid:pk>/", views.ExportDetailView.as_view(), name="export-detail"),
+    path("exports/<uuid:pk>/download/", views.ExportDownloadView.as_view(), name="export-download"),
 
     # ── Annotations & Bookmarks ─────────────────
     path("annotations/", views.AnnotationListCreateView.as_view(), name="annotation-list"),

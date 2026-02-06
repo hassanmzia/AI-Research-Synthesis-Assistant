@@ -507,7 +507,28 @@ export default function AgentsPage() {
       );
     }
 
-    // Common IDs to skip in "other fields"
+    // Handle ID fields (paper_id, project_id, query_id, etc.)
+    const idFields = ['paper_id', 'project_id', 'query_id', 'report_id', 'task_id', 'session_id'];
+    const foundIds = idFields.filter(key => obj[key]);
+    if (foundIds.length > 0) {
+      foundIds.forEach(key => handledKeys.add(key));
+      elements.push(
+        <div key="ids" className="mb-3">
+          <div className="flex flex-wrap gap-3">
+            {foundIds.map(key => (
+              <div key={key} className="text-sm">
+                <span className="text-gray-500 dark:text-gray-400">{key.replace(/_/g, ' ').replace(/\bid\b/i, 'ID')}:</span>
+                <code className="ml-1.5 text-xs bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded font-mono">
+                  {String(obj[key]).substring(0, 8)}...
+                </code>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // Common IDs to skip in "other fields" (already handled above)
     handledKeys.add('query_id');
     handledKeys.add('paper_id');
     handledKeys.add('project_id');

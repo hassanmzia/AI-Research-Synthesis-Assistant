@@ -17,9 +17,14 @@ interface AgentLogDetail {
   child_logs: Array<{
     id: string;
     agent_name: string;
+    task_id: string;
     status: string;
+    input_data: Record<string, any>;
+    output_data: Record<string, any>;
+    error_message: string;
     duration_ms: number;
     tokens_used: number;
+    created_at: string;
   }>;
   outgoing_interactions: Array<{
     id: string;
@@ -507,7 +512,28 @@ export default function AgentsPage() {
       );
     }
 
-    // Common IDs to skip in "other fields"
+    // Handle ID fields (paper_id, project_id, query_id, etc.)
+    const idFields = ['paper_id', 'project_id', 'query_id', 'report_id', 'task_id', 'session_id'];
+    const foundIds = idFields.filter(key => obj[key]);
+    if (foundIds.length > 0) {
+      foundIds.forEach(key => handledKeys.add(key));
+      elements.push(
+        <div key="ids" className="mb-3">
+          <div className="flex flex-wrap gap-3">
+            {foundIds.map(key => (
+              <div key={key} className="text-sm">
+                <span className="text-gray-500 dark:text-gray-400">{key.replace(/_/g, ' ').replace(/\bid\b/i, 'ID')}:</span>
+                <code className="ml-1.5 text-xs bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded font-mono">
+                  {String(obj[key]).substring(0, 8)}...
+                </code>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // Common IDs to skip in "other fields" (already handled above)
     handledKeys.add('query_id');
     handledKeys.add('paper_id');
     handledKeys.add('project_id');
@@ -670,26 +696,56 @@ export default function AgentsPage() {
                       </div>
                     )}
 
-                    {/* Child Logs */}
+                    {/* Child Logs with Full Details */}
                     {log.child_logs.length > 0 && (
                       <div>
-                        <h4 className="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
-                          Child Agent Executions
+                        <h4 className="text-sm font-semibold mb-3 text-gray-700 dark:text-gray-300">
+                          Child Agent Executions ({log.child_logs.length})
                         </h4>
-                        <div className="space-y-1 ml-4 border-l-2 border-purple-200 dark:border-purple-800 pl-4">
+                        <div className="space-y-3 ml-4 border-l-2 border-purple-200 dark:border-purple-800 pl-4">
                           {log.child_logs.map((child) => (
-                            <div key={child.id} className="flex items-center gap-2 text-sm">
-                              <div className={`w-2 h-2 rounded-full ${agentColors[child.agent_name] || 'bg-gray-500'}`} />
-                              <span className="capitalize">{child.agent_name}</span>
-                              <span className={`badge text-xs ${
-                                child.status === 'completed' ? 'badge-success' :
-                                child.status === 'failed' ? 'badge-error' : 'badge-warning'
-                              }`}>
-                                {child.status}
-                              </span>
-                              {child.duration_ms > 0 && <span className="text-xs text-gray-500">{child.duration_ms}ms</span>}
-                              {child.tokens_used > 0 && <span className="text-xs text-gray-500">{child.tokens_used} tokens</span>}
-                            </div>
+                            <details key={child.id} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                              <summary className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-2.5 h-2.5 rounded-full ${agentColors[child.agent_name] || 'bg-gray-500'}`} />
+                                  <span className="font-medium capitalize">{child.agent_name}</span>
+                                  <span className={`badge text-xs ${
+                                    child.status === 'completed' ? 'badge-success' :
+                                    child.status === 'failed' ? 'badge-error' : 'badge-warning'
+                                  }`}>
+                                    {child.status}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-3 text-xs text-gray-500">
+                                  {child.duration_ms > 0 && <span>{child.duration_ms}ms</span>}
+                                  {child.tokens_used > 0 && <span>{child.tokens_used} tokens</span>}
+                                  {child.created_at && <span>{new Date(child.created_at).toLocaleTimeString()}</span>}
+                                </div>
+                              </summary>
+                              <div className="p-3 pt-0 space-y-3 border-t border-gray-100 dark:border-gray-700 mt-2">
+                                <div className="text-xs text-gray-500">
+                                  Task ID: <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">{child.task_id}</code>
+                                </div>
+                                {child.input_data && Object.keys(child.input_data).length > 0 && (
+                                  <div>
+                                    <h5 className="text-xs font-semibold mb-1 text-gray-600 dark:text-gray-400">Input</h5>
+                                    {formatPayload(child.input_data, 'input')}
+                                  </div>
+                                )}
+                                {child.output_data && Object.keys(child.output_data).length > 0 && (
+                                  <div>
+                                    <h5 className="text-xs font-semibold mb-1 text-gray-600 dark:text-gray-400">Output</h5>
+                                    {formatPayload(child.output_data, 'output')}
+                                  </div>
+                                )}
+                                {child.error_message && (
+                                  <div className="bg-red-50 dark:bg-red-900/20 p-2 rounded border-l-2 border-red-500">
+                                    <span className="text-xs font-semibold text-red-600 dark:text-red-400">Error:</span>
+                                    <p className="text-xs text-red-700 dark:text-red-300 mt-1">{child.error_message}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </details>
                           ))}
                         </div>
                       </div>

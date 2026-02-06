@@ -262,14 +262,19 @@ class AgentLogSerializer(serializers.ModelSerializer):
 
     def get_child_logs(self, obj):
         children = obj.child_logs.all()[:10]
-        # Use a simplified serializer to avoid deep recursion
+        # Include full details for audit trail visibility
         return [
             {
                 "id": str(c.id),
                 "agent_name": c.agent_name,
+                "task_id": c.task_id,
                 "status": c.status,
+                "input_data": c.input_data,
+                "output_data": c.output_data,
+                "error_message": c.error_message,
                 "duration_ms": c.duration_ms,
                 "tokens_used": c.tokens_used,
+                "created_at": c.created_at.isoformat() if c.created_at else None,
             }
             for c in children
         ]

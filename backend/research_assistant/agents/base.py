@@ -17,11 +17,13 @@ class BaseAgent(ABC):
     name: str = "base"
     description: str = "Base agent"
 
-    def __init__(self, user=None, api_key: str | None = None):
+    def __init__(self, user=None, api_key: str | None = None, parent_log=None):
         self.user = user
         self.api_key = api_key or settings.OPENAI_API_KEY
         self.request_id = str(uuid.uuid4())
+        self.parent_log = parent_log  # For tracking A2A call hierarchy
         self._llm = None
+        self._log = None
 
     @property
     def llm(self) -> ChatOpenAI:
@@ -53,9 +55,11 @@ class BaseAgent(ABC):
             status="started",
             input_data=input_data,
             user=self.user,
+            parent_log=self.parent_log,  # Link to parent for A2A hierarchy
         )
         self._start_time = time.time()
-        logger.info(f"[{self.name}] Started task {self.request_id}")
+        parent_info = f" (parent: {self.parent_log.agent_name})" if self.parent_log else ""
+        logger.info(f"[{self.name}] Started task {self.request_id}{parent_info}")
 
     def log_complete(self, output_data: dict, tokens_used: int = 0) -> None:
         """Log agent task completion."""
@@ -85,16 +89,29 @@ class BaseAgent(ABC):
         """Send a message to another agent via A2A protocol."""
         from ..models import AgentInteraction
 
+        # Get current log for parent reference
+        current_log = getattr(self, "_log", None)
+
         interaction = AgentInteraction.objects.create(
             source_agent=self.name,
             target_agent=target_agent,
             protocol="a2a",
             request_payload=payload,
+            parent_log=current_log,  # Link interaction to parent log
+        )
+
+        logger.info(
+            f"[A2A] {self.name} -> {target_agent}: {list(payload.keys())}"
         )
 
         try:
             agent_class = get_agent_class(target_agent)
-            agent = agent_class(user=self.user, api_key=self.api_key)
+            # Pass parent_log so child can link its log to parent
+            agent = agent_class(
+                user=self.user,
+                api_key=self.api_key,
+                parent_log=current_log,
+            )
             start = time.time()
             result = agent.execute(**payload)
             duration = int((time.time() - start) * 1000)
@@ -102,13 +119,19 @@ class BaseAgent(ABC):
             interaction.response_payload = result
             interaction.status = "success"
             interaction.duration_ms = duration
+            interaction.child_log = getattr(agent, "_log", None)  # Link to child's log
             interaction.save()
+
+            logger.info(
+                f"[A2A] {self.name} <- {target_agent}: success ({duration}ms)"
+            )
 
             return result
         except Exception as e:
             interaction.status = "failed"
             interaction.response_payload = {"error": str(e)}
             interaction.save()
+            logger.error(f"[A2A] {self.name} <- {target_agent}: failed - {e}")
             raise
 
     def get_agent_card(self) -> dict:

@@ -10,6 +10,7 @@ export default function ReportDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [report, setReport] = useState<SynthesisReport | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
@@ -21,15 +22,51 @@ export default function ReportDetailPage() {
   }, [id]);
 
   const handleExport = async (format: string) => {
+    setExporting(format);
+    const toastId = toast.loading(`Generating ${format.toUpperCase()}...`);
+
     try {
-      await exportAPI.create({
+      // Create export job
+      const createRes = await exportAPI.create({
         export_type: 'synthesis_report',
         output_format: format,
         parameters: { report_id: id },
       });
-      toast.success(`Export to ${format.toUpperCase()} started!`);
-    } catch {
-      toast.error('Export failed');
+
+      const exportId = createRes.data.id;
+
+      // Poll for completion
+      let attempts = 0;
+      const maxAttempts = 30; // 30 seconds max
+
+      while (attempts < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        const statusRes = await exportAPI.get(exportId);
+
+        if (statusRes.data.status === 'completed') {
+          // Download the file
+          const extMap: Record<string, string> = {
+            pdf: 'pdf', json: 'json', markdown: 'md'
+          };
+          const ext = extMap[format] || 'txt';
+          const filename = `${report?.title?.replace(/[^a-z0-9]/gi, '_') || 'report'}.${ext}`;
+
+          await exportAPI.download(exportId, filename);
+          toast.success(`${format.toUpperCase()} downloaded!`, { id: toastId });
+          setExporting(null);
+          return;
+        } else if (statusRes.data.status === 'failed') {
+          throw new Error(statusRes.data.error_message || 'Export failed');
+        }
+
+        attempts++;
+      }
+
+      throw new Error('Export timed out');
+    } catch (err: any) {
+      toast.error(err.message || 'Export failed', { id: toastId });
+    } finally {
+      setExporting(null);
     }
   };
 
@@ -56,9 +93,27 @@ export default function ReportDetailPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => handleExport('pdf')} className="btn-primary text-sm">Export PDF</button>
-            <button onClick={() => handleExport('markdown')} className="btn-secondary text-sm">Export MD</button>
-            <button onClick={() => handleExport('json')} className="btn-secondary text-sm">Export JSON</button>
+            <button
+              onClick={() => handleExport('pdf')}
+              disabled={!!exporting}
+              className="btn-primary text-sm disabled:opacity-50"
+            >
+              {exporting === 'pdf' ? 'Generating...' : 'Export PDF'}
+            </button>
+            <button
+              onClick={() => handleExport('markdown')}
+              disabled={!!exporting}
+              className="btn-secondary text-sm disabled:opacity-50"
+            >
+              {exporting === 'markdown' ? 'Generating...' : 'Export MD'}
+            </button>
+            <button
+              onClick={() => handleExport('json')}
+              disabled={!!exporting}
+              className="btn-secondary text-sm disabled:opacity-50"
+            >
+              {exporting === 'json' ? 'Generating...' : 'Export JSON'}
+            </button>
           </div>
         </div>
       </div>

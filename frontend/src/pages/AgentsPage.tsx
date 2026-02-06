@@ -89,10 +89,227 @@ export default function AgentsPage() {
     summary: 'bg-indigo-500',
   };
 
-  const formatJson = (obj: any) => {
-    if (!obj || Object.keys(obj).length === 0) return <span className="text-gray-400">Empty</span>;
+  // Score badge with color coding
+  const ScoreBadge = ({ score, label }: { score: number; label?: string }) => {
+    const percentage = Math.round(score * 100);
+    const colorClass = percentage >= 80 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300' :
+                       percentage >= 60 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300' :
+                       'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
     return (
-      <pre className="text-xs bg-gray-50 dark:bg-gray-800 p-3 rounded overflow-x-auto max-h-64">
+      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-sm font-medium ${colorClass}`}>
+        {label && <span className="mr-1">{label}:</span>}
+        {percentage}%
+      </span>
+    );
+  };
+
+  // Render evaluation results
+  const renderEvaluations = (evaluations: Record<string, any>) => {
+    if (!evaluations || Object.keys(evaluations).length === 0) return null;
+
+    return (
+      <div className="space-y-3">
+        {Object.entries(evaluations).map(([key, eval_data]: [string, any]) => (
+          <div key={key} className="bg-white dark:bg-gray-800 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-medium capitalize text-gray-700 dark:text-gray-300">
+                {key.replace(/_/g, ' ')}
+              </span>
+              {eval_data?.score !== undefined && <ScoreBadge score={eval_data.score} />}
+            </div>
+            {eval_data?.explanation && (
+              <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                {eval_data.explanation}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // Render question/answer pair
+  const renderQA = (question: string, answer?: string) => (
+    <div className="space-y-3">
+      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border-l-4 border-blue-500">
+        <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 mb-1 uppercase">Question</div>
+        <p className="text-gray-800 dark:text-gray-200">{question}</p>
+      </div>
+      {answer && (
+        <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-3 border-l-4 border-green-500">
+          <div className="text-xs font-semibold text-green-600 dark:text-green-400 mb-1 uppercase">Answer</div>
+          <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{answer}</p>
+        </div>
+      )}
+    </div>
+  );
+
+  // Render context/sources
+  const renderContext = (context: string | string[]) => {
+    const contexts = Array.isArray(context) ? context : [context];
+    if (contexts.length === 0 || !contexts[0]) return null;
+
+    return (
+      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+        <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase">
+          Retrieved Context ({contexts.length} {contexts.length === 1 ? 'source' : 'sources'})
+        </div>
+        <div className="space-y-2 max-h-48 overflow-y-auto">
+          {contexts.map((ctx, idx) => (
+            <div key={idx} className="text-sm text-gray-700 dark:text-gray-300 p-2 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
+              {typeof ctx === 'string' ? ctx.substring(0, 300) + (ctx.length > 300 ? '...' : '') : JSON.stringify(ctx)}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Smart payload renderer that detects content type
+  const formatPayload = (obj: any, type: 'request' | 'response' | 'input' | 'output') => {
+    if (!obj || Object.keys(obj).length === 0) return <span className="text-gray-400 italic">No data</span>;
+
+    const elements: JSX.Element[] = [];
+
+    // Handle question/answer content
+    if (obj.question || obj.query) {
+      elements.push(
+        <div key="qa" className="mb-4">
+          {renderQA(obj.question || obj.query, obj.answer)}
+        </div>
+      );
+    }
+
+    // Handle context/sources
+    if (obj.context || obj.contexts || obj.retrieved_context) {
+      elements.push(
+        <div key="context" className="mb-4">
+          {renderContext(obj.context || obj.contexts || obj.retrieved_context)}
+        </div>
+      );
+    }
+
+    // Handle evaluations
+    if (obj.evaluations) {
+      elements.push(
+        <div key="evaluations" className="mb-4">
+          <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase">Evaluation Results</div>
+          {renderEvaluations(obj.evaluations)}
+        </div>
+      );
+    }
+
+    // Handle composite score
+    if (obj.composite_score !== undefined) {
+      elements.push(
+        <div key="composite" className="mb-4 flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Overall Score:</span>
+          <ScoreBadge score={obj.composite_score} />
+        </div>
+      );
+    }
+
+    // Handle tokens used
+    if (obj.total_tokens || obj.tokens_used) {
+      elements.push(
+        <div key="tokens" className="mb-4 text-sm text-gray-500">
+          <span className="font-medium">Tokens used:</span> {(obj.total_tokens || obj.tokens_used).toLocaleString()}
+        </div>
+      );
+    }
+
+    // Handle papers/documents
+    if (obj.papers && Array.isArray(obj.papers)) {
+      elements.push(
+        <div key="papers" className="mb-4">
+          <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase">
+            Papers ({obj.papers.length})
+          </div>
+          <div className="space-y-2 max-h-40 overflow-y-auto">
+            {obj.papers.slice(0, 5).map((paper: any, idx: number) => (
+              <div key={idx} className="text-sm p-2 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
+                <div className="font-medium">{paper.title || paper.name || `Paper ${idx + 1}`}</div>
+                {paper.authors && <div className="text-xs text-gray-500">{paper.authors}</div>}
+              </div>
+            ))}
+            {obj.papers.length > 5 && (
+              <div className="text-xs text-gray-500">...and {obj.papers.length - 5} more</div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // Handle synthesis/report content
+    if (obj.synthesis || obj.report || obj.content) {
+      const content = obj.synthesis || obj.report || obj.content;
+      elements.push(
+        <div key="content" className="mb-4">
+          <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase">
+            {obj.synthesis ? 'Synthesis' : obj.report ? 'Report' : 'Content'}
+          </div>
+          <div className="text-sm text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 p-3 rounded border border-gray-200 dark:border-gray-600 max-h-48 overflow-y-auto whitespace-pre-wrap">
+            {typeof content === 'string' ? content.substring(0, 1000) + (content.length > 1000 ? '...' : '') : JSON.stringify(content, null, 2)}
+          </div>
+        </div>
+      );
+    }
+
+    // Handle citations
+    if (obj.citations && Array.isArray(obj.citations)) {
+      elements.push(
+        <div key="citations" className="mb-4">
+          <div className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 uppercase">
+            Citations ({obj.citations.length})
+          </div>
+          <div className="space-y-1">
+            {obj.citations.slice(0, 5).map((citation: any, idx: number) => (
+              <div key={idx} className="text-sm text-gray-600 dark:text-gray-400">
+                [{idx + 1}] {typeof citation === 'string' ? citation : citation.formatted || citation.title || JSON.stringify(citation)}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // Handle error
+    if (obj.error) {
+      elements.push(
+        <div key="error" className="mb-4 bg-red-50 dark:bg-red-900/20 p-3 rounded border-l-4 border-red-500">
+          <div className="text-xs font-semibold text-red-600 dark:text-red-400 mb-1 uppercase">Error</div>
+          <p className="text-red-700 dark:text-red-300">{obj.error}</p>
+        </div>
+      );
+    }
+
+    // If we rendered specific content, return it
+    if (elements.length > 0) {
+      // Show any remaining fields not yet rendered
+      const renderedKeys = new Set(['question', 'query', 'answer', 'context', 'contexts', 'retrieved_context',
+        'evaluations', 'composite_score', 'total_tokens', 'tokens_used', 'papers', 'synthesis', 'report',
+        'content', 'citations', 'error', 'query_id']);
+      const otherFields = Object.entries(obj).filter(([key]) => !renderedKeys.has(key));
+
+      if (otherFields.length > 0) {
+        elements.push(
+          <details key="other" className="mt-2">
+            <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-700">
+              Other fields ({otherFields.length})
+            </summary>
+            <pre className="text-xs bg-gray-100 dark:bg-gray-900 p-2 mt-1 rounded overflow-x-auto">
+              {JSON.stringify(Object.fromEntries(otherFields), null, 2)}
+            </pre>
+          </details>
+        );
+      }
+
+      return <div>{elements}</div>;
+    }
+
+    // Fallback to formatted JSON for unrecognized structures
+    return (
+      <pre className="text-xs bg-gray-100 dark:bg-gray-900 p-3 rounded overflow-x-auto max-h-64">
         {JSON.stringify(obj, null, 2)}
       </pre>
     );
@@ -182,13 +399,13 @@ export default function AgentsPage() {
                     {/* Input Data */}
                     <div>
                       <h4 className="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Input Data</h4>
-                      {formatJson(log.input_data)}
+                      {formatPayload(log.input_data, 'input')}
                     </div>
 
                     {/* Output Data */}
                     <div>
                       <h4 className="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Output Data</h4>
-                      {formatJson(log.output_data)}
+                      {formatPayload(log.output_data, 'output')}
                     </div>
 
                     {/* Error Message */}
@@ -304,21 +521,27 @@ export default function AgentsPage() {
                 {/* Expanded Details */}
                 {expandedInteractions.has(interaction.id) && (
                   <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50/50 dark:bg-gray-800/30">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       {/* Request Payload */}
-                      <div>
-                        <h4 className="text-sm font-semibold mb-2 text-blue-600 dark:text-blue-400">
-                          Request Payload
+                      <div className="bg-blue-50/50 dark:bg-blue-900/10 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+                        <h4 className="text-sm font-semibold mb-3 text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16l-4-4m0 0l4-4m-4 4h18" />
+                          </svg>
+                          Request from {interaction.source_agent}
                         </h4>
-                        {formatJson(interaction.request_payload)}
+                        {formatPayload(interaction.request_payload, 'request')}
                       </div>
 
                       {/* Response Payload */}
-                      <div>
-                        <h4 className="text-sm font-semibold mb-2 text-green-600 dark:text-green-400">
-                          Response Payload
+                      <div className="bg-green-50/50 dark:bg-green-900/10 rounded-lg p-4 border border-green-200 dark:border-green-800">
+                        <h4 className="text-sm font-semibold mb-3 text-green-600 dark:text-green-400 flex items-center gap-2">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                          </svg>
+                          Response from {interaction.target_agent}
                         </h4>
-                        {formatJson(interaction.response_payload)}
+                        {formatPayload(interaction.response_payload, 'response')}
                       </div>
                     </div>
                   </div>

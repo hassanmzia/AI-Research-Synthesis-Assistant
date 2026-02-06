@@ -4,9 +4,21 @@ import io
 import json
 import logging
 import os
+import re
 import tempfile
 
 from django.conf import settings
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import inch
+from reportlab.platypus import (
+    Paragraph,
+    SimpleDocTemplate,
+    Spacer,
+    Table,
+    TableStyle,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +88,8 @@ class ExportService:
                 ],
             }
             return self._write_text(json.dumps(data, indent=2), "report", "json")
+        elif fmt == "pdf":
+            return self._generate_pdf_report(report)
         else:
             return self._write_text(report.content_markdown, "report", "md")
 
@@ -147,6 +161,153 @@ class ExportService:
             for msg in messages:
                 lines.append(f"[{msg.role}]: {msg.content}")
             return self._write_text("\n\n".join(lines), "conversation", "txt")
+
+    def _generate_pdf_report(self, report) -> str:
+        """Generate a PDF from a synthesis report."""
+        export_dir = os.path.join(settings.MEDIA_ROOT, "exports")
+        os.makedirs(export_dir, exist_ok=True)
+
+        fd, path = tempfile.mkstemp(suffix=".pdf", prefix="report_", dir=export_dir)
+        os.close(fd)
+
+        doc = SimpleDocTemplate(
+            path,
+            pagesize=letter,
+            rightMargin=inch,
+            leftMargin=inch,
+            topMargin=inch,
+            bottomMargin=inch,
+        )
+
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            "CustomTitle",
+            parent=styles["Heading1"],
+            fontSize=18,
+            spaceAfter=20,
+            textColor=colors.HexColor("#1a1a2e"),
+        )
+        heading_style = ParagraphStyle(
+            "CustomHeading",
+            parent=styles["Heading2"],
+            fontSize=14,
+            spaceBefore=15,
+            spaceAfter=10,
+            textColor=colors.HexColor("#16213e"),
+        )
+        body_style = ParagraphStyle(
+            "CustomBody",
+            parent=styles["Normal"],
+            fontSize=11,
+            leading=16,
+            spaceAfter=10,
+        )
+
+        story = []
+
+        # Title
+        story.append(Paragraph(report.title, title_style))
+        story.append(Spacer(1, 0.2 * inch))
+
+        # Report type badge
+        report_type_text = f"<b>Report Type:</b> {report.report_type.replace('_', ' ').title()}"
+        story.append(Paragraph(report_type_text, body_style))
+        story.append(Spacer(1, 0.3 * inch))
+
+        # Convert markdown content to PDF paragraphs
+        content = report.content_markdown or ""
+        self._parse_markdown_to_pdf(content, story, heading_style, body_style)
+
+        # Add sections if available
+        sections = report.sections.all()
+        for section in sections:
+            story.append(Spacer(1, 0.2 * inch))
+            story.append(Paragraph(section.title, heading_style))
+            self._parse_markdown_to_pdf(
+                section.content or "", story, heading_style, body_style
+            )
+
+        doc.build(story)
+        return os.path.relpath(path, settings.MEDIA_ROOT)
+
+    def _parse_markdown_to_pdf(self, content: str, story: list, heading_style, body_style):
+        """Parse markdown content and add to PDF story."""
+        lines = content.split("\n")
+        current_paragraph = []
+
+        for line in lines:
+            stripped = line.strip()
+
+            if not stripped:
+                if current_paragraph:
+                    text = " ".join(current_paragraph)
+                    text = self._escape_html(text)
+                    story.append(Paragraph(text, body_style))
+                    current_paragraph = []
+                continue
+
+            # Headings
+            if stripped.startswith("### "):
+                if current_paragraph:
+                    text = " ".join(current_paragraph)
+                    text = self._escape_html(text)
+                    story.append(Paragraph(text, body_style))
+                    current_paragraph = []
+                heading_text = self._escape_html(stripped[4:])
+                story.append(Paragraph(heading_text, heading_style))
+            elif stripped.startswith("## "):
+                if current_paragraph:
+                    text = " ".join(current_paragraph)
+                    text = self._escape_html(text)
+                    story.append(Paragraph(text, body_style))
+                    current_paragraph = []
+                heading_text = self._escape_html(stripped[3:])
+                story.append(Paragraph(heading_text, heading_style))
+            elif stripped.startswith("# "):
+                if current_paragraph:
+                    text = " ".join(current_paragraph)
+                    text = self._escape_html(text)
+                    story.append(Paragraph(text, body_style))
+                    current_paragraph = []
+                heading_text = self._escape_html(stripped[2:])
+                story.append(Paragraph(heading_text, heading_style))
+            elif stripped.startswith("- ") or stripped.startswith("* "):
+                if current_paragraph:
+                    text = " ".join(current_paragraph)
+                    text = self._escape_html(text)
+                    story.append(Paragraph(text, body_style))
+                    current_paragraph = []
+                bullet_text = self._escape_html(stripped[2:])
+                story.append(Paragraph(f"• {bullet_text}", body_style))
+            else:
+                # Apply inline formatting
+                formatted = self._format_inline_markdown(stripped)
+                current_paragraph.append(formatted)
+
+        if current_paragraph:
+            text = " ".join(current_paragraph)
+            text = self._escape_html(text)
+            story.append(Paragraph(text, body_style))
+
+    def _format_inline_markdown(self, text: str) -> str:
+        """Convert inline markdown to ReportLab markup."""
+        # Bold: **text** or __text__
+        text = re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", text)
+        text = re.sub(r"__(.+?)__", r"<b>\1</b>", text)
+        # Italic: *text* or _text_
+        text = re.sub(r"\*(.+?)\*", r"<i>\1</i>", text)
+        text = re.sub(r"_(.+?)_", r"<i>\1</i>", text)
+        return text
+
+    def _escape_html(self, text: str) -> str:
+        """Escape HTML special characters for ReportLab."""
+        text = text.replace("&", "&amp;")
+        text = text.replace("<", "&lt;")
+        text = text.replace(">", "&gt;")
+        # Re-apply our formatting tags
+        text = text.replace("&lt;b&gt;", "<b>").replace("&lt;/b&gt;", "</b>")
+        text = text.replace("&lt;i&gt;", "<i>").replace("&lt;/i&gt;", "</i>")
+        return text
 
     def _write_output(self, data: list[dict], name: str, fmt: str) -> str:
         """Write list of dicts to file in the specified format."""

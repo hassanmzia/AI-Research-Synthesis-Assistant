@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib.auth import authenticate
 from django.db.models import Avg, Count, Sum
 from django.db.models.functions import TruncDate
-from django.http import JsonResponse
+from django.http import FileResponse, Http404, JsonResponse
 from django.utils import timezone
 from django.views.decorators.http import require_GET
 from rest_framework import generics, permissions, status
@@ -482,6 +482,69 @@ class ExportDetailView(generics.RetrieveAPIView):
 
     def get_queryset(self):
         return ExportJob.objects.filter(user=self.request.user)
+
+
+class ExportDownloadView(APIView):
+    """Download an export file."""
+
+    def get(self, request, pk):
+        import os
+
+        try:
+            export = ExportJob.objects.get(id=pk, user=request.user)
+        except ExportJob.DoesNotExist:
+            raise Http404("Export not found")
+
+        if export.status != "completed":
+            return Response(
+                {"error": "Export is not ready for download"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not export.file:
+            return Response(
+                {"error": "Export file not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        file_path = os.path.join(settings.MEDIA_ROOT, str(export.file))
+        if not os.path.exists(file_path):
+            return Response(
+                {"error": "Export file not found on disk"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Determine content type based on format
+        content_types = {
+            "pdf": "application/pdf",
+            "json": "application/json",
+            "markdown": "text/markdown",
+            "csv": "text/csv",
+            "bibtex": "application/x-bibtex",
+            "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        }
+        content_type = content_types.get(export.output_format, "application/octet-stream")
+
+        # Generate filename
+        ext_map = {
+            "pdf": "pdf",
+            "json": "json",
+            "markdown": "md",
+            "csv": "csv",
+            "bibtex": "bib",
+            "docx": "docx",
+            "xlsx": "xlsx",
+        }
+        ext = ext_map.get(export.output_format, "txt")
+        filename = f"{export.export_type}_{export.id}.{ext}"
+
+        response = FileResponse(
+            open(file_path, "rb"),
+            content_type=content_type,
+        )
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
 
 
 # ── Annotations & Bookmarks ────────────────────

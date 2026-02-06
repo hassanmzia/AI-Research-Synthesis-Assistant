@@ -56,6 +56,7 @@ export default function ReportDetailPage() {
             </div>
           </div>
           <div className="flex gap-2">
+            <button onClick={() => handleExport('pdf')} className="btn-primary text-sm">Export PDF</button>
             <button onClick={() => handleExport('markdown')} className="btn-secondary text-sm">Export MD</button>
             <button onClick={() => handleExport('json')} className="btn-secondary text-sm">Export JSON</button>
           </div>

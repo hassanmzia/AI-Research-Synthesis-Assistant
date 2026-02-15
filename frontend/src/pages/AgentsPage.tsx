@@ -571,14 +571,14 @@ export default function AgentsPage() {
   const rootLogs = logs.filter(log => !log.parent_log_id);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Multi-Agent System</h1>
-        <p className="text-gray-500 mt-1">Monitor AI agents, A2A interactions, and execution details</p>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Multi-Agent System</h1>
+        <p className="text-gray-500 mt-1 text-sm sm:text-base">Monitor AI agents, A2A interactions, and execution details</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 border-b border-gray-200 dark:border-dark-border">
+      <div className="flex gap-1 mb-6 border-b border-gray-200 dark:border-dark-border overflow-x-auto">
         {(['logs', 'interactions', 'agents'] as const).map((tab) => (
           <button
             key={tab}
@@ -607,11 +607,11 @@ export default function AgentsPage() {
                 {/* Log Header - Clickable */}
                 <div
                   onClick={() => toggleLog(log.id)}
-                  className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 gap-2"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full ${agentColors[log.agent_name] || 'bg-gray-500'}`} />
-                    <span className="font-semibold capitalize">{log.agent_name}</span>
+                  <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                    <div className={`w-3 h-3 rounded-full flex-shrink-0 ${agentColors[log.agent_name] || 'bg-gray-500'}`} />
+                    <span className="font-semibold capitalize text-sm sm:text-base">{log.agent_name}</span>
                     <span className={`badge ${
                       log.status === 'completed' ? 'badge-success' :
                       log.status === 'failed' ? 'badge-error' :
@@ -621,15 +621,15 @@ export default function AgentsPage() {
                     </span>
                     {log.child_logs.length > 0 && (
                       <span className="text-xs text-gray-500">
-                        ({log.child_logs.length} child agents)
+                        ({log.child_logs.length} child)
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="flex gap-3 text-xs text-gray-500">
+                  <div className="flex items-center gap-2 sm:gap-4">
+                    <div className="flex gap-2 sm:gap-3 text-xs text-gray-500 flex-wrap">
                       {log.duration_ms > 0 && <span>{log.duration_ms}ms</span>}
                       {log.tokens_used > 0 && <span>{log.tokens_used} tokens</span>}
-                      <span>{new Date(log.created_at).toLocaleString()}</span>
+                      <span>{new Date(log.created_at).toLocaleDateString()}</span>
                     </div>
                     <svg
                       className={`w-5 h-5 text-gray-400 transition-transform ${expandedLogs.has(log.id) ? 'rotate-180' : ''}`}
@@ -771,25 +771,25 @@ export default function AgentsPage() {
                 {/* Interaction Header - Clickable */}
                 <div
                   onClick={() => toggleInteraction(interaction.id)}
-                  className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                  className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 gap-2"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-2.5 h-2.5 rounded-full ${agentColors[interaction.source_agent] || 'bg-gray-500'}`} />
-                    <span className="font-medium capitalize">{interaction.source_agent}</span>
-                    <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                    <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${agentColors[interaction.source_agent] || 'bg-gray-500'}`} />
+                    <span className="font-medium capitalize text-sm">{interaction.source_agent}</span>
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
-                    <div className={`w-2.5 h-2.5 rounded-full ${agentColors[interaction.target_agent] || 'bg-gray-500'}`} />
-                    <span className="font-medium capitalize">{interaction.target_agent}</span>
+                    <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${agentColors[interaction.target_agent] || 'bg-gray-500'}`} />
+                    <span className="font-medium capitalize text-sm">{interaction.target_agent}</span>
                     <span className="badge-info text-xs">{interaction.protocol.toUpperCase()}</span>
                     <span className={`badge ${interaction.status === 'success' ? 'badge-success' : 'badge-error'}`}>
                       {interaction.status}
                     </span>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="flex gap-3 text-xs text-gray-500">
+                  <div className="flex items-center gap-2 sm:gap-4">
+                    <div className="flex gap-2 sm:gap-3 text-xs text-gray-500">
                       {interaction.duration_ms > 0 && <span>{interaction.duration_ms}ms</span>}
-                      <span>{new Date(interaction.created_at).toLocaleString()}</span>
+                      <span>{new Date(interaction.created_at).toLocaleDateString()}</span>
                     </div>
                     <svg
                       className={`w-5 h-5 text-gray-400 transition-transform ${expandedInteractions.has(interaction.id) ? 'rotate-180' : ''}`}
@@ -802,8 +802,8 @@ export default function AgentsPage() {
 
                 {/* Expanded Details */}
                 {expandedInteractions.has(interaction.id) && (
-                  <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50/50 dark:bg-gray-800/30">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="border-t border-gray-200 dark:border-gray-700 p-3 sm:p-4 bg-gray-50/50 dark:bg-gray-800/30">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
                       {/* Request Payload */}
                       <div className="bg-blue-50/50 dark:bg-blue-900/10 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
                         <h4 className="text-sm font-semibold mb-3 text-blue-600 dark:text-blue-400 flex items-center gap-2">
@@ -836,7 +836,7 @@ export default function AgentsPage() {
 
       {/* Agent Cards */}
       {activeTab === 'agents' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {agents.map((agent) => (
             <div key={agent.name} className="card">
               <div className="flex items-center gap-3 mb-3">
@@ -863,8 +863,8 @@ export default function AgentsPage() {
       <div className="card mt-6">
         <h3 className="text-lg font-semibold mb-4">System Architecture</h3>
         <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 text-center">
-          <div className="grid grid-cols-4 gap-4 max-w-2xl mx-auto">
-            <div className="col-span-4 p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 max-w-2xl mx-auto">
+            <div className="col-span-2 sm:col-span-4 p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
               <span className="text-sm font-bold text-purple-700 dark:text-purple-300">Orchestrator Agent</span>
               <p className="text-xs text-gray-500 mt-1">Routes & coordinates all requests</p>
             </div>

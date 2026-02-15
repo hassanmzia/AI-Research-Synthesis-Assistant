@@ -46,6 +46,12 @@ staticfiles/
 .DS_Store
 Thumbs.db
 
+# SSL Certificates (keep directory, ignore cert files)
+ssl/*.pem
+ssl/*.key
+ssl/*.crt
+ssl/*.csr
+
 # Coverage
 htmlcov/
 .coverage

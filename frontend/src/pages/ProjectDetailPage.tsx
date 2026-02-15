@@ -70,21 +70,21 @@ export default function ProjectDetailPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       {/* Project Header */}
       <div className="card mb-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{project.name}</h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-1">{project.description}</p>
-            <div className="flex gap-4 mt-3 text-sm text-gray-500">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white truncate">{project.name}</h1>
+            <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">{project.description}</p>
+            <div className="flex flex-wrap gap-3 mt-3 text-sm text-gray-500">
               <span>{project.paper_count} papers</span>
               <span>{project.total_chunks} chunks</span>
               <span>Owner: {project.owner_name}</span>
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={startConversation} className="btn-primary flex items-center gap-2">
+            <button onClick={startConversation} className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
@@ -142,11 +142,11 @@ export default function ProjectDetailPage() {
         ) : (
           <div className="space-y-3">
             {papers.map((paper) => (
-              <div key={paper.id} className="card flex items-center justify-between">
+              <div key={paper.id} className="card flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-medium truncate">{paper.title}</h3>
-                  <div className="flex gap-3 mt-1 text-xs text-gray-500">
-                    <span>{paper.file_name}</span>
+                  <h3 className="font-medium truncate text-sm sm:text-base">{paper.title}</h3>
+                  <div className="flex flex-wrap gap-2 sm:gap-3 mt-1 text-xs text-gray-500">
+                    <span className="truncate max-w-[150px]">{paper.file_name}</span>
                     <span>{paper.page_count} pages</span>
                     <span>{paper.chunk_count} chunks</span>
                     <span>{(paper.file_size / 1024 / 1024).toFixed(1)} MB</span>

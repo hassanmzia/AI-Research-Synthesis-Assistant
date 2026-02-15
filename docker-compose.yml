@@ -87,7 +87,7 @@ services:
       - OPENAI_BASE_URL=${OPENAI_BASE_URL:-https://api.openai.com/v1}
       - SECRET_KEY=${DJANGO_SECRET_KEY:-django-insecure-change-me-in-production-abc123xyz}
       - ALLOWED_HOSTS=*
-      - CORS_ALLOWED_ORIGINS=http://172.168.1.95:13066,http://localhost:13066
+      - CORS_ALLOWED_ORIGINS=https://demo.eminencetechsolutions.com:13066,https://108.48.39.238:13066,https://localhost:13066,http://localhost:13066
       - CELERY_BROKER_URL=redis://redis:6379/1
       - CELERY_RESULT_BACKEND=redis://redis:6379/2
     ports:
@@ -209,7 +209,7 @@ services:
       - DJANGO_BACKEND_URL=http://backend:8000
       - REDIS_URL=redis://redis:6379/0
       - JWT_SECRET=${JWT_SECRET:-arsa-jwt-secret-change-in-production}
-      - CORS_ORIGIN=http://172.168.1.95:13066,http://localhost:13066
+      - CORS_ORIGIN=https://demo.eminencetechsolutions.com:13066,https://108.48.39.238:13066,https://localhost:13066,http://localhost:13066
     ports:
       - "3071:4000"
     depends_on:
@@ -226,9 +226,9 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - REACT_APP_API_URL=http://172.168.1.95:13066/api
-        - REACT_APP_WS_URL=ws://172.168.1.95:13066/ws
-        - REACT_APP_GATEWAY_URL=http://172.168.1.95:13066/gw
+        - REACT_APP_API_URL=https://demo.eminencetechsolutions.com:13066/api
+        - REACT_APP_WS_URL=wss://demo.eminencetechsolutions.com:13066/ws
+        - REACT_APP_GATEWAY_URL=https://demo.eminencetechsolutions.com:13066/gw
     container_name: arsa-frontend
     restart: unless-stopped
     volumes:
@@ -237,17 +237,19 @@ services:
       - arsa-network
 
   # ──────────────────────────────────────────────
-  # Nginx Reverse Proxy – port 13066 (main site)
+  # Nginx Reverse Proxy – port 13066 (HTTPS)
   # ──────────────────────────────────────────────
   nginx:
     image: nginx:1.25-alpine
     container_name: arsa-nginx
     restart: unless-stopped
     ports:
-      - "13066:80"
+      - "13066:443"
+      - "13080:80"
     volumes:
       - ./nginx/conf.d/default.conf:/etc/nginx/conf.d/default.conf:ro
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
       - frontend_build:/usr/share/nginx/html:ro
       - media_data:/usr/share/nginx/media:ro
     depends_on:

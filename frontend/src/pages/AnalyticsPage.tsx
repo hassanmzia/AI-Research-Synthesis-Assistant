@@ -19,7 +19,7 @@ export default function AnalyticsPage() {
   if (loading) {
     return (
       <div className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           {[1, 2, 3, 4].map((i) => (
             <div key={i} className="card animate-pulse h-24" />
           ))}
@@ -29,8 +29,8 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Analytics & Usage</h1>
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+      <h1 className="text-xl sm:text-2xl font-bold mb-6">Analytics & Usage</h1>
 
       {/* Usage Quota */}
       {usage && (
@@ -61,7 +61,7 @@ export default function AnalyticsPage() {
       {/* Stats Grid */}
       {data && (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
             {[
               { label: 'Total Projects', value: data.total_projects, color: 'text-blue-600' },
               { label: 'Total Papers', value: data.total_papers, color: 'text-green-600' },

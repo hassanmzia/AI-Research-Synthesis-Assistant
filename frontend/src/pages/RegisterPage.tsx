@@ -50,7 +50,7 @@ export default function RegisterPage() {
 
         <div className="card">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First Name</label>
                 <input type="text" value={form.first_name} onChange={(e) => update('first_name', e.target.value)} className="input-field" />

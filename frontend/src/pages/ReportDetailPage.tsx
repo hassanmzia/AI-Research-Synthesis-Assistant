@@ -79,38 +79,38 @@ export default function ReportDetailPage() {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-5xl mx-auto">
       {/* Header */}
       <div className="card mb-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">{report.title}</h1>
-            <div className="flex gap-3 mt-2 text-sm text-gray-500">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold">{report.title}</h1>
+            <div className="flex flex-wrap gap-2 sm:gap-3 mt-2 text-xs sm:text-sm text-gray-500">
               <span className="capitalize">{report.report_type.replace('_', ' ')}</span>
               <span>{report.total_tokens_used.toLocaleString()} tokens</span>
               <span>{(report.generation_time_ms / 1000).toFixed(1)}s</span>
-              <span>{new Date(report.created_at).toLocaleString()}</span>
+              <span>{new Date(report.created_at).toLocaleDateString()}</span>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={() => handleExport('pdf')}
               disabled={!!exporting}
-              className="btn-primary text-sm disabled:opacity-50"
+              className="btn-primary text-sm disabled:opacity-50 flex-1 sm:flex-none"
             >
               {exporting === 'pdf' ? 'Generating...' : 'Export PDF'}
             </button>
             <button
               onClick={() => handleExport('markdown')}
               disabled={!!exporting}
-              className="btn-secondary text-sm disabled:opacity-50"
+              className="btn-secondary text-sm disabled:opacity-50 flex-1 sm:flex-none"
             >
               {exporting === 'markdown' ? 'Generating...' : 'Export MD'}
             </button>
             <button
               onClick={() => handleExport('json')}
               disabled={!!exporting}
-              className="btn-secondary text-sm disabled:opacity-50"
+              className="btn-secondary text-sm disabled:opacity-50 flex-1 sm:flex-none"
             >
               {exporting === 'json' ? 'Generating...' : 'Export JSON'}
             </button>

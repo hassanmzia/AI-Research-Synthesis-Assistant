@@ -63,8 +63,8 @@ export default function SettingsPage() {
   ] as const;
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Settings</h1>
+    <div className="p-4 sm:p-6 max-w-4xl mx-auto">
+      <h1 className="text-xl sm:text-2xl font-bold mb-6">Settings</h1>
 
       <div className="flex gap-1 mb-6 border-b border-gray-200 dark:border-dark-border">
         {tabs.map((tab) => (
@@ -85,7 +85,7 @@ export default function SettingsPage() {
       {/* Profile */}
       {activeTab === 'profile' && (
         <div className="card space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">First Name</label>
               <input type="text" value={profile.first_name} onChange={(e) => setProfile({ ...profile, first_name: e.target.value })} className="input-field" />
@@ -108,7 +108,7 @@ export default function SettingsPage() {
           </div>
           <div className="pt-4 border-t border-gray-200 dark:border-dark-border">
             <h3 className="font-medium mb-2">Account Info</h3>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
               <div><span className="text-gray-500">Username:</span> {user?.username}</div>
               <div><span className="text-gray-500">Email:</span> {user?.email}</div>
               <div><span className="text-gray-500">Token Quota:</span> {user?.usage_quota_tokens?.toLocaleString()}</div>
@@ -124,7 +124,7 @@ export default function SettingsPage() {
           <div className="card">
             <h3 className="font-semibold mb-4">Add API Key</h3>
             <form onSubmit={addApiKey} className="space-y-3">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-sm font-medium mb-1">Provider</label>
                   <select value={newKey.provider} onChange={(e) => setNewKey({ ...newKey, provider: e.target.value })} className="input-field">
@@ -189,12 +189,12 @@ export default function SettingsPage() {
           ) : (
             <div className="space-y-2">
               {exports.map((exp: any) => (
-                <div key={exp.id} className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-dark-border">
+                <div key={exp.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-lg border border-gray-200 dark:border-dark-border">
                   <div>
                     <span className="text-sm font-medium capitalize">{exp.export_type.replace('_', ' ')}</span>
                     <span className="text-xs text-gray-500 ml-3 uppercase">{exp.output_format}</span>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                     <span className={`badge ${
                       exp.status === 'completed' ? 'badge-success' :
                       exp.status === 'processing' ? 'badge-info' : 'badge-warning'
@@ -202,7 +202,7 @@ export default function SettingsPage() {
                       {exp.status}
                     </span>
                     <span className="text-xs text-gray-500">
-                      {new Date(exp.created_at).toLocaleString()}
+                      {new Date(exp.created_at).toLocaleDateString()}
                     </span>
                     {exp.status === 'completed' && (
                       <button

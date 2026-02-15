@@ -54,13 +54,13 @@ export default function ReportsPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Synthesis Reports</h1>
-          <p className="text-gray-500 mt-1">AI-generated research synthesis and analysis</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Synthesis Reports</h1>
+          <p className="text-gray-500 mt-1 text-sm sm:text-base">AI-generated research synthesis and analysis</p>
         </div>
-        <button onClick={() => setShowGenerate(true)} className="btn-primary flex items-center gap-2">
+        <button onClick={() => setShowGenerate(true)} className="btn-primary flex items-center justify-center gap-2 w-full sm:w-auto">
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
@@ -143,17 +143,17 @@ export default function ReportsPage() {
         <div className="space-y-3">
           {reports.map((report) => (
             <Link key={report.id} to={`/reports/${report.id}`} className="card block hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-semibold">{report.title}</h3>
-                  <div className="flex gap-3 mt-1 text-xs text-gray-500">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <h3 className="font-semibold truncate">{report.title}</h3>
+                  <div className="flex flex-wrap gap-2 sm:gap-3 mt-1 text-xs text-gray-500">
                     <span className="capitalize">{report.report_type.replace('_', ' ')}</span>
                     <span>{report.total_tokens_used.toLocaleString()} tokens</span>
-                    <span>{(report.generation_time_ms / 1000).toFixed(1)}s generation</span>
-                    <span>{new Date(report.created_at).toLocaleString()}</span>
+                    <span>{(report.generation_time_ms / 1000).toFixed(1)}s</span>
+                    <span>{new Date(report.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>
-                <span className={statusColors[report.status]}>{report.status}</span>
+                <span className={`flex-shrink-0 ${statusColors[report.status]}`}>{report.status}</span>
               </div>
             </Link>
           ))}
